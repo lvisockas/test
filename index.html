@@ -1,4 +1,17 @@
-<button onclick="openInExternalBrowser()">Open in Browser</button>
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facebook In-App Browser Redirect</title>
+</head>
+<body>
+
+    <button id="redirectButton">Open in Chrome (#1)</button>
+  
+  <button onclick="openInExternalBrowser()">Open in Browser (#3)</button>
 
 <script>
   function openInExternalBrowser() {
@@ -7,3 +20,24 @@
   }
 </script>
 
+    <script>
+        function checkAndRedirect() {
+            function isFacebookInAppBrowser() {
+                let ua = navigator.userAgent || navigator.vendor || window.opera;
+                return ua.includes("FBAN") || ua.includes("FBAV");
+            }
+
+            if (isFacebookInAppBrowser()) {
+                let url = window.location.href;
+                window.location = "googlechrome://" + url.replace(/^https?:\/\//, ""); // For Chrome
+                window.location = "https://" + url.replace(/^https?:\/\//, ""); // Fallback
+            } else {
+                alert("You are not inside Facebook's in-app browser.");
+            }
+        }
+
+        document.getElementById("redirectButton").addEventListener("click", checkAndRedirect);
+    </script>
+
+</body>
+</html>
