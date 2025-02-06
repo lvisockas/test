@@ -6,10 +6,13 @@
     <title>Auto Append URL Parameter</title>
     <script>
         (function() {
-            const url = new URL(window.location);
-            if (!url.searchParams.has('wvk')) {
-                url.searchParams.set('wvk', '1');
-                window.location.replace(url);
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            if (/FBAN|FBAV/i.test(userAgent)) { // Check if inside Facebook WebView
+                const url = new URL(window.location);
+                if (!url.searchParams.has('wvk')) {
+                    url.searchParams.set('wvk', '1');
+                    window.location.replace(url);
+                }
             }
         })();
     </script>
