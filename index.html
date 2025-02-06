@@ -3,43 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Facebook In-App Browser Redirect</title>
+    <title>Auto Append URL Parameter</title>
+    <script>
+        (function() {
+            const url = new URL(window.location);
+            if (!url.searchParams.has('wvk')) {
+                url.searchParams.set('wvk', '1');
+                window.location.replace(url);
+            }
+        })();
+    </script>
 </head>
 <body>
-
-    <button id="redirectButton">Open in Chrome (#1)</button>
-  
-    <button onclick="openInExternalBrowser()">Open in Browser (#3)</button>
-
-    <script>
-        function appendParamToUrl(url, param, value) {
-            let urlObj = new URL(url, window.location.origin);
-            urlObj.searchParams.set(param, value);
-            return urlObj.toString();
-        }
-
-        function openInExternalBrowser() {
-            let url = appendParamToUrl(window.location.href, "wvk", "1");
-            window.open(url, "_blank");
-        }
-
-        function checkAndRedirect() {
-            function isFacebookInAppBrowser() {
-                let ua = navigator.userAgent || navigator.vendor || window.opera;
-                return ua.includes("FBAN") || ua.includes("FBAV");
-            }
-
-            if (isFacebookInAppBrowser()) {
-                let url = appendParamToUrl(window.location.href, "wvk", "1");
-                window.location = "googlechrome://" + url.replace(/^https?:\/\//, ""); // For Chrome
-                window.location = "https://" + url.replace(/^https?:\/\//, ""); // Fallback
-            } else {
-                alert("You are not inside Facebook's in-app browser.");
-            }
-        }
-
-        document.getElementById("redirectButton").addEventListener("click", checkAndRedirect);
-    </script>
-
+    <h1>URL Parameter Added</h1>
+    <p>If you don't see <code>?wvk=1</code> in the URL, the page will reload with it.</p>
 </body>
 </html>
