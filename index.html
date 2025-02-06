@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,16 +9,20 @@
 
     <button id="redirectButton">Open in Chrome (#1)</button>
   
-  <button onclick="openInExternalBrowser()">Open in Browser (#3)</button>
-
-<script>
-  function openInExternalBrowser() {
-    let url = window.location.href;
-    window.open(url, "_blank");
-  }
-</script>
+    <button onclick="openInExternalBrowser()">Open in Browser (#3)</button>
 
     <script>
+        function appendParamToUrl(url, param, value) {
+            let urlObj = new URL(url, window.location.origin);
+            urlObj.searchParams.set(param, value);
+            return urlObj.toString();
+        }
+
+        function openInExternalBrowser() {
+            let url = appendParamToUrl(window.location.href, "wvk", "1");
+            window.open(url, "_blank");
+        }
+
         function checkAndRedirect() {
             function isFacebookInAppBrowser() {
                 let ua = navigator.userAgent || navigator.vendor || window.opera;
@@ -28,7 +30,7 @@
             }
 
             if (isFacebookInAppBrowser()) {
-                let url = window.location.href;
+                let url = appendParamToUrl(window.location.href, "wvk", "1");
                 window.location = "googlechrome://" + url.replace(/^https?:\/\//, ""); // For Chrome
                 window.location = "https://" + url.replace(/^https?:\/\//, ""); // Fallback
             } else {
