@@ -2,38 +2,119 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auto Append URL Parameter</title>
-    <script>
-        (function() {
-            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            if (/FBAN|FBAV/i.test(userAgent)) { // Check if inside Facebook WebView
-                const url = new URL(window.location);
-                if (!url.searchParams.has('wvk')) {
-                    url.searchParams.set('wvk', '1');
-                    window.location.replace(url);
-                }
-            }
-        })();
-    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Emoji Game</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Text:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <h1>URL Parameter Added</h1>
-    <p>If you don't see <code>?wvk=1</code> in the URL, the page will reload with it.</p>
-    <a href="https://boredpanda.com" target="_blank" rel="noopener noreferrer">Visit Bored Panda</a>
-<a href="intent://boredpanda.com#Intent;scheme=https;package=com.android.chrome;end;">
-    Open in Browser
-</a>
 
-    <hr/><hr/><hr/>
+    <div class="phone-frame">
+        <div class="app-container">
 
-    <a href="googlechromes://www.boredpanda.com/selena-gomezs-weight-loss-unveils-slimmer-look-2025-sag-awards/" target="_blank">Open in Chrome</a>
+            <!-- ================================== -->
+            <!-- ======== TUTORIAL SCREEN 1 ========= -->
+            <!-- ================================== -->
+            <div id="tutorial-screen-1" class="screen">
+                <div class="tutorial-content">
+                    <h1>Welcome to Emoji Game</h1>
+                    <p>Solve the puzzle by completing words and phrases with emoji.</p>
+                    <div class="tutorial-example">
+                        <span>DISAP</span>
+                        <div class="emoji-blank-example">
+                            <div class="emoji-drop-example">🍐</div>
+                        </div>
+                        <span>EAR</span>
+                    </div>
+                    <p class="sub-text">Drag the emoji onto the blanks.</p>
+                </div>
+                <div class="tutorial-footer">
+                    <div class="dots"><span class="active"></span><span></span></div>
+                    <button class="button-primary" id="next-tutorial-btn">Next</button>
+                    <button class="button-secondary" id="skip-tutorial-btn-1">Skip Tutorial</button>
+                </div>
+            </div>
 
-        <a href="safari://www.boredpanda.com/selena-gomezs-weight-loss-unveils-slimmer-look-2025-sag-awards/" target="_blank">Open in Safari</a>
+            <!-- ================================== -->
+            <!-- ======== TUTORIAL SCREEN 2 ========= -->
+            <!-- ================================== -->
+             <div id="tutorial-screen-2" class="screen" style="display: none;">
+                <button class="close-btn" id="close-tutorial-btn-2">×</button>
+                <div class="tutorial-content">
+                    <h1>Emoji can have different meanings</h1>
+                    <p>Consider definitions and associations while interpreting emoji.</p>
+                     <div class="tutorial-example-solved">
+                        <div class="solved-word">
+                            <span>DISAP</span><span class="emoji-letter">🍐</span><span>EAR</span>
+                        </div>
+                        <div class="solved-word">
+                            <span>FRUIT</span><span class="emoji-letter">FUL</span><span></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="tutorial-footer">
+                    <div class="dots"><span></span><span class="active"></span></div>
+                    <button class="button-primary" id="start-game-btn">Next</button>
+                    <button class="button-secondary" id="skip-tutorial-btn-2">Skip Tutorial</button>
+                </div>
+            </div>
 
-        <a href="webkit://www.boredpanda.com/selena-gomezs-weight-loss-unveils-slimmer-look-2025-sag-awards/" target="_blank">Open in Webkit</a>
-        <a href="x-web-search://?www.boredpanda.com/selena-gomezs-weight-loss-unveils-slimmer-look-2025-sag-awards/" target="_blank">Open in search</a>
+            <!-- ================================== -->
+            <!-- ========= MAIN GAME SCREEN ========= -->
+            <!-- ================================== -->
+            <div id="game-screen" class="screen" style="display: none;">
+                <header class="game-header">
+                    <button class="close-btn">×</button>
+                    <div class="moves-counter">
+                        <span class="emoji-face">😀</span>
+                        <span id="moves-count">0 moves</span>
+                    </div>
+                    <button class="more-btn">···</button>
+                </header>
 
+                <main id="puzzle-container" class="puzzle-area">
+                    <!-- Puzzles will be generated here by JavaScript -->
+                </main>
 
+                <footer id="emoji-tray" class="emoji-tray-container">
+                    <!-- Draggable emojis will be generated here by JavaScript -->
+                </footer>
+            </div>
+            
+            <!-- ================================== -->
+            <!-- ========= WIN SCREEN ============= -->
+            <!-- ================================== -->
+            <div id="win-screen" class="screen" style="display: none;">
+                <canvas id="confetti-canvas"></canvas>
+                <div class="win-content">
+                    <img src="https://em-content.zobj.net/source/apple/354/wreathed-smiley_1f972.png" alt="Wreathed Smiley" class="win-trophy"/>
+                    <h1>Perfection!</h1>
+                    <p>You solved the puzzle.</p>
+
+                    <div class="score-card">
+                        <div class="score-card-left">
+                            <span class="emoji-face">😀</span>
+                            <span id="final-date">Tuesday, Jul 1, 2025</span>
+                        </div>
+                        <div class="score-card-right">
+                            <span>Score</span>
+                            <span id="final-score">6 moves</span>
+                        </div>
+                    </div>
+
+                    <button class="button-primary" id="done-btn">Done</button>
+                    <div class="win-buttons-group">
+                        <button class="button-secondary">More Puzzles</button>
+                        <button class="button-secondary">Share</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="game.js"></script>
 </body>
 </html>
