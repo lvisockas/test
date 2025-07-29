@@ -2,119 +2,375 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Emoji Game</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Text:wght@400;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emoji News Quiz</title>
+    
+    <!-- CSS for styling the game -->
+    <style>
+        :root {
+            --apple-blue: #007aff;
+            --apple-green: #34c759;
+            --apple-red: #ff3b30;
+            --light-gray: #f2f2f7;
+            --medium-gray: #e5e5ea;
+            --text-primary: #1d1d1f;
+            --text-secondary: #6e6e73;
+            --background-light: #f0f2f5;
+            --card-background: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background-light);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        #game-container {
+            background-color: var(--card-background);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 480px;
+            box-sizing: border-box;
+            margin: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Game Screen --- */
+        .progress-bar-container {
+            width: 100%;
+            height: 6px;
+            background-color: var(--medium-gray);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        #progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: var(--text-secondary);
+            border-radius: 3px;
+            transition: width 0.4s ease-in-out;
+        }
+
+        #emoji-container {
+            font-size: 5rem;
+            text-align: center;
+            margin-bottom: 12px;
+            line-height: 1.2;
+        }
+
+        #question-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-align: center;
+            color: var(--text-secondary);
+            margin: 0 0 24px 0;
+        }
+
+        #answer-buttons {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .btn {
+            background-color: var(--light-gray);
+            border: 1px solid var(--light-gray);
+            border-radius: 12px;
+            padding: 16px;
+            font-size: 1rem;
+            font-weight: 500;
+            text-align: left;
+            cursor: pointer;
+            transition: transform 0.1s ease, background-color 0.2s ease, border-color 0.2s ease;
+            width: 100%;
+            box-sizing: border-box;
+            color: var(--text-primary);
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: scale(1.02);
+            background-color: var(--medium-gray);
+        }
+        
+        .btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.9;
+        }
+        
+        .btn.correct {
+            background-color: #e5f9ed;
+            border-color: var(--apple-green);
+            color: var(--apple-green);
+            font-weight: 700;
+        }
+
+        .btn.wrong {
+            background-color: #ffeeee;
+            border-color: var(--apple-red);
+            color: var(--apple-red);
+            font-weight: 700;
+        }
+
+        #next-button {
+            background-color: var(--apple-blue);
+            color: white;
+            border: none;
+            font-weight: 600;
+            display: none; /* Hidden by default */
+        }
+        
+        #next-button:hover:not(:disabled) {
+            background-color: #0056b3;
+        }
+
+        /* --- Results Screen --- */
+        #results-screen {
+            text-align: center;
+        }
+
+        #results-screen h2 {
+            font-size: 2rem;
+            margin-bottom: 16px;
+        }
+
+        #score-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        #results-message {
+            font-size: 1.1rem;
+            margin-bottom: 32px;
+        }
+
+        #play-again-button {
+            background-color: var(--apple-blue);
+            color: white;
+            border: none;
+            font-weight: 600;
+        }
+
+        /* Utility Class */
+        .hidden {
+            display: none !important;
+        }
+    </style>
+
+    <!-- Game Questions Data (JSON) -->
+    <script>
+        const questions = [
+            {
+                emojis: "🧑‍🔬➡️🕷️➡️💪",
+                question: "Guess the superhero movie",
+                answers: [
+                    { text: "Batman", correct: false },
+                    { text: "Spider-Man", correct: true },
+                    { text: "Superman", correct: false },
+                    { text: "Iron Man", correct: false }
+                ]
+            },
+            {
+                emojis: "🦁👑",
+                question: "Guess the animated classic",
+                answers: [
+                    { text: "The Jungle Book", correct: false },
+                    { text: "Madagascar", correct: false },
+                    { text: "The Lion King", correct: true },
+                    { text: "Zootopia", correct: false }
+                ]
+            },
+            {
+                emojis: "🧙‍♂️💍🌋",
+                question: "Guess the fantasy trilogy",
+                answers: [
+                    { text: "The Lord of the Rings", correct: true },
+                    { text: "Harry Potter", correct: false },
+                    { text: "The Chronicles of Narnia", correct: false },
+                    { text: "Star Wars", correct: false }
+                ]
+            },
+            {
+                emojis: "🤡🎈⛵️",
+                question: "Guess the horror movie",
+                answers: [
+                    { text: "Scream", correct: false },
+                    { text: "The Shining", correct: false },
+                    { text: "It", correct: true },
+                    { text: "Joker", correct: false }
+                ]
+            },
+            {
+                emojis: "👩‍🍳🐀🇫🇷",
+                question: "Guess the Pixar film",
+                answers: [
+                    { text: "Finding Nemo", correct: false },
+                    { text: "Ratatouille", correct: true },
+                    { text: "Up", correct: false },
+                    { text: "Toy Story", correct: false }
+                ]
+            }
+        ];
+    </script>
 </head>
 <body>
 
-    <div class="phone-frame">
-        <div class="app-container">
-
-            <!-- ================================== -->
-            <!-- ======== TUTORIAL SCREEN 1 ========= -->
-            <!-- ================================== -->
-            <div id="tutorial-screen-1" class="screen">
-                <div class="tutorial-content">
-                    <h1>Welcome to Emoji Game</h1>
-                    <p>Solve the puzzle by completing words and phrases with emoji.</p>
-                    <div class="tutorial-example">
-                        <span>DISAP</span>
-                        <div class="emoji-blank-example">
-                            <div class="emoji-drop-example">🍐</div>
-                        </div>
-                        <span>EAR</span>
-                    </div>
-                    <p class="sub-text">Drag the emoji onto the blanks.</p>
-                </div>
-                <div class="tutorial-footer">
-                    <div class="dots"><span class="active"></span><span></span></div>
-                    <button class="button-primary" id="next-tutorial-btn">Next</button>
-                    <button class="button-secondary" id="skip-tutorial-btn-1">Skip Tutorial</button>
-                </div>
+    <div id="game-container">
+        <!-- Game Screen -->
+        <div id="game-screen">
+            <div class="progress-bar-container">
+                <div id="progress-bar"></div>
             </div>
+            <div id="emoji-container"></div>
+            <p id="question-text"></p>
+            <div id="answer-buttons"></div>
+            <button id="next-button" class="btn">Next Question</button>
+        </div>
 
-            <!-- ================================== -->
-            <!-- ======== TUTORIAL SCREEN 2 ========= -->
-            <!-- ================================== -->
-             <div id="tutorial-screen-2" class="screen" style="display: none;">
-                <button class="close-btn" id="close-tutorial-btn-2">×</button>
-                <div class="tutorial-content">
-                    <h1>Emoji can have different meanings</h1>
-                    <p>Consider definitions and associations while interpreting emoji.</p>
-                     <div class="tutorial-example-solved">
-                        <div class="solved-word">
-                            <span>DISAP</span><span class="emoji-letter">🍐</span><span>EAR</span>
-                        </div>
-                        <div class="solved-word">
-                            <span>FRUIT</span><span class="emoji-letter">FUL</span><span></span>
-                        </div>
-                    </div>
-                </div>
-                <div class="tutorial-footer">
-                    <div class="dots"><span></span><span class="active"></span></div>
-                    <button class="button-primary" id="start-game-btn">Next</button>
-                    <button class="button-secondary" id="skip-tutorial-btn-2">Skip Tutorial</button>
-                </div>
-            </div>
-
-            <!-- ================================== -->
-            <!-- ========= MAIN GAME SCREEN ========= -->
-            <!-- ================================== -->
-            <div id="game-screen" class="screen" style="display: none;">
-                <header class="game-header">
-                    <button class="close-btn">×</button>
-                    <div class="moves-counter">
-                        <span class="emoji-face">😀</span>
-                        <span id="moves-count">0 moves</span>
-                    </div>
-                    <button class="more-btn">···</button>
-                </header>
-
-                <main id="puzzle-container" class="puzzle-area">
-                    <!-- Puzzles will be generated here by JavaScript -->
-                </main>
-
-                <footer id="emoji-tray" class="emoji-tray-container">
-                    <!-- Draggable emojis will be generated here by JavaScript -->
-                </footer>
-            </div>
-            
-            <!-- ================================== -->
-            <!-- ========= WIN SCREEN ============= -->
-            <!-- ================================== -->
-            <div id="win-screen" class="screen" style="display: none;">
-                <canvas id="confetti-canvas"></canvas>
-                <div class="win-content">
-                    <img src="https://em-content.zobj.net/source/apple/354/wreathed-smiley_1f972.png" alt="Wreathed Smiley" class="win-trophy"/>
-                    <h1>Perfection!</h1>
-                    <p>You solved the puzzle.</p>
-
-                    <div class="score-card">
-                        <div class="score-card-left">
-                            <span class="emoji-face">😀</span>
-                            <span id="final-date">Tuesday, Jul 1, 2025</span>
-                        </div>
-                        <div class="score-card-right">
-                            <span>Score</span>
-                            <span id="final-score">6 moves</span>
-                        </div>
-                    </div>
-
-                    <button class="button-primary" id="done-btn">Done</button>
-                    <div class="win-buttons-group">
-                        <button class="button-secondary">More Puzzles</button>
-                        <button class="button-secondary">Share</button>
-                    </div>
-                </div>
-            </div>
-
+        <!-- Results Screen -->
+        <div id="results-screen" class="hidden">
+            <h2>Quiz Complete!</h2>
+            <p id="score-text"></p>
+            <p id="results-message"></p>
+            <button id="play-again-button" class="btn">Play Again</button>
         </div>
     </div>
 
-    <script src="game.js"></script>
+    <!-- JavaScript for Game Logic -->
+    <script>
+        const gameScreen = document.getElementById('game-screen');
+        const resultsScreen = document.getElementById('results-screen');
+        
+        const progressBar = document.getElementById('progress-bar');
+        const emojiContainer = document.getElementById('emoji-container');
+        const questionText = document.getElementById('question-text');
+        const answerButtonsContainer = document.getElementById('answer-buttons');
+        const nextButton = document.getElementById('next-button');
+        
+        const scoreText = document.getElementById('score-text');
+        const resultsMessage = document.getElementById('results-message');
+        const playAgainButton = document.getElementById('play-again-button');
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+
+        function startGame() {
+            currentQuestionIndex = 0;
+            score = 0;
+            resultsScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            nextButton.classList.add('hidden');
+            showQuestion(questions[currentQuestionIndex]);
+        }
+
+        function showQuestion(question) {
+            // Reset state
+            resetState();
+
+            // Update progress bar
+            const progressPercentage = ((currentQuestionIndex + 1) / questions.length) * 100;
+            progressBar.style.width = `${progressPercentage}%`;
+            
+            // Populate question content
+            emojiContainer.innerText = question.emojis;
+            questionText.innerText = question.question;
+
+            // Create answer buttons
+            question.answers.forEach(answer => {
+                const button = document.createElement('button');
+                button.innerText = answer.text;
+                button.classList.add('btn');
+                if (answer.correct) {
+                    button.dataset.correct = answer.correct;
+                }
+                button.addEventListener('click', selectAnswer);
+                answerButtonsContainer.appendChild(button);
+            });
+        }
+
+        function resetState() {
+            nextButton.classList.add('hidden');
+            while (answerButtonsContainer.firstChild) {
+                answerButtonsContainer.removeChild(answerButtonsContainer.firstChild);
+            }
+        }
+
+        function selectAnswer(e) {
+            const selectedButton = e.target;
+            const isCorrect = selectedButton.dataset.correct === 'true';
+
+            if (isCorrect) {
+                score++;
+                selectedButton.classList.add('correct');
+            } else {
+                selectedButton.classList.add('wrong');
+            }
+
+            // Show the correct answer and disable all buttons
+            Array.from(answerButtonsContainer.children).forEach(button => {
+                if (button.dataset.correct === 'true') {
+                    button.classList.add('correct');
+                }
+                button.disabled = true;
+            });
+            
+            // Show the next button
+            if (questions.length > currentQuestionIndex + 1) {
+                nextButton.innerText = "Next Question";
+            } else {
+                nextButton.innerText = "Show Results";
+            }
+            nextButton.classList.remove('hidden');
+        }
+
+        function handleNextButton() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                showQuestion(questions[currentQuestionIndex]);
+            } else {
+                showResults();
+            }
+        }
+        
+        function showResults() {
+            gameScreen.classList.add('hidden');
+            resultsScreen.classList.remove('hidden');
+
+            scoreText.innerText = `You scored ${score} out of ${questions.length}!`;
+            
+            let message = "";
+            const percentage = (score / questions.length) * 100;
+            if (percentage === 100) {
+                message = "Perfect score! You're an emoji master! 🏆";
+            } else if (percentage >= 75) {
+                message = "Great job! You really know your stuff. ✨";
+            } else if (percentage >= 50) {
+                message = "Not bad! A solid effort. 👍";
+            } else {
+                message = "Keep practicing! You'll get there. 😊";
+            }
+            resultsMessage.innerText = message;
+        }
+
+        nextButton.addEventListener('click', handleNextButton);
+        playAgainButton.addEventListener('click', startGame);
+
+        // Start the game on page load
+        startGame();
+    </script>
+
 </body>
 </html>
