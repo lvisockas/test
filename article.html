@@ -5,20 +5,27 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Article page</title>
   <style>
-    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color-scheme: light dark; }
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
     body { margin: 0; padding: 2rem; }
     main { max-width: 820px; margin: 0 auto; }
-    button { padding: .5rem .9rem; border-radius: .6rem; border: 1px solid currentColor; background: transparent; cursor: pointer; }
-    code { padding: .1rem .3rem; border-radius: .3rem; background: color-mix(in oklab, Canvas 92%, CanvasText 8%); }
+    button { padding: .5rem .9rem; border-radius: .4rem; border: 1px solid currentColor; background: transparent; cursor: pointer; }
+    code { padding: .1rem .3rem; border-radius: .3rem; background: #f3f3f3; }
+    .note { opacity: .8; font-size: .9rem; margin-top:.5rem; }
   </style>
 </head>
 <body>
   <main>
-    <h1 id="title">Article page (waiting for click)</h1>
+    <h1 id="title">Article page (waiting)</h1>
     <p><a href="./index.html">Home</a></p>
     <p>Status: <code id="status">not hacked</code></p>
-    <p><button id="enableBtn" type="button">Enable Back (click once)</button>
-       <button id="backBtn" type="button">← Back</button></p>
+
+    <p>
+      <button id="enableReal">Enable Back (real navigation)</button>
+      <button id="enableFake">Enable Back (pushState only)</button>
+      <button id="backBtn">← Back</button>
+    </p>
+
+    <p class="note">Real navigation adds <code>?entry=1</code> to the URL which creates a genuine history entry (better for webviews). Use the first button if the in-app browser ignores pushState.</p>
   </main>
 
   <script>
@@ -27,7 +34,8 @@
       const HOME = BASE + 'index.html';
       const title = document.getElementById('title');
       const statusEl = document.getElementById('status');
-      const enableBtn = document.getElementById('enableBtn');
+      const enableReal = document.getElementById('enableReal');
+      const enableFake = document.getElementById('enableFake');
       const backBtn = document.getElementById('backBtn');
 
       let hacked = false;
@@ -40,6 +48,7 @@
       function hackHistory(reason) {
         if (hacked) return true;
         try {
+          // We still do replace+push to add an in-page guard for fast back handling.
           history.replaceState({ trap: true, reason, t: Date.now() }, '', location.href);
           history.pushState({ trap: true, guard: true, reason, t: Date.now() }, '', location.href);
           hacked = true;
@@ -54,36 +63,59 @@
         }
       }
 
-      // 1) Popstate ready immediately; this does not "hack", just handles Back once we have a guard.
+      // Popstate handler ready immediately
       window.addEventListener('popstate', () => {
         console.log('[Article] popstate → redirecting to', HOME);
         location.replace(HOME);
       });
 
-      // 2) HACK ONLY ON USER CLICK
-      //    a) Dedicated "Enable Back" button
-      enableBtn.addEventListener('click', () => {
-        console.log('[Article] enable button clicked — hacking history');
-        hackHistory('click-button');
+      // Detect if this visit already includes the real-nav param
+      const url = new URL(location.href);
+      const hasEntryParam = url.searchParams.get('entry') === '1';
+
+      if (hasEntryParam) {
+        console.log('[Article] arrived with ?entry=1 — doing local hack to create guard');
+        // When arriving via real navigation, install local guard quickly
+        // without an extra redirect loop:
+        // small timeout to let webview settle
+        setTimeout(() => hackHistory('arrived-real-nav'), 50);
+        setStatus('arrived via real navigation');
+      } else {
+        setStatus('waiting for user trigger');
+      }
+
+      // Enable Real: perform an actual navigation to same URL + ?entry=1
+      enableReal.addEventListener('click', () => {
+        if (hasEntryParam) {
+          setStatus('already real-navigated');
+          hackHistory('already-real');
+          return;
+        }
+        console.log('[Article] enableReal clicked — navigating to URL with ?entry=1 (real nav)');
+        // Construct new URL preserving hash
+        const target = new URL(location.href);
+        target.searchParams.set('entry', '1');
+        // Real navigation (user gesture) — creates true history entry in webview
+        location.href = target.toString();
       });
 
-      //    b) Any click anywhere on the document (first one only)
-      const onFirstDocumentClick = (ev) => {
-        if (ev.target === enableBtn || ev.target === backBtn) return; // buttons handled separately
-        console.log('[Article] first document click — hacking history');
-        hackHistory('click-document');
-        document.removeEventListener('click', onFirstDocumentClick, true);
-      };
-      document.addEventListener('click', onFirstDocumentClick, true);
+      // Enable Fake: do the in-page replace+push (may be ignored by some webviews)
+      enableFake.addEventListener('click', () => {
+        console.log('[Article] enableFake clicked — trying in-page hack');
+        const ok = hackHistory('click-fake');
+        if (!ok) {
+          setStatus('fake hack failed; try real nav');
+        }
+      });
 
-      // 3) Back button: ensure hack exists, then go back to trigger popstate → HOME
+      // Back button: prefer history.back(); if not hacked, fall back to direct navigation
       backBtn.addEventListener('click', () => {
-        console.log('[Article] Back button clicked');
+        console.log('[Article] Back button clicked — hacked?', hacked);
         if (!hacked) {
-          console.log('[Article] not hacked yet — hacking now before back()');
-          if (!hackHistory('click-backbtn')) {
-            // If hacking failed, fall back to direct navigation
-            console.log('[Article] hack failed — navigating directly to HOME');
+          setStatus('not hacked yet — attempting quick hack then back');
+          const ok = hackHistory('click-backbtn');
+          if (!ok) {
+            console.log('[Article] quick hack failed — navigating to HOME directly');
             location.replace(HOME);
             return;
           }
@@ -91,8 +123,36 @@
         history.back();
       });
 
-      setStatus('ready (waiting for user click)');
-      console.log('[Article] Ready — will only hack on user click');
+      // ---- Extra hacky workarounds (not enabled by default) ----
+      // 1) Fragment trick: use location.hash change to create a real entry (works almost everywhere)
+      function fragmentTrick() {
+        const h = '#__entry_' + Date.now();
+        console.log('[Article] fragmentTrick creating hash', h);
+        location.hash = h; // creates a history entry
+        // Later, when user hits back, you'll be on previous URL (hash removed)
+      }
+
+      // 2) Open-and-close window trick (will be blocked in many in-app browsers)
+      function popupTrick() {
+        try {
+          const w = window.open(location.pathname + '?entry=tmp', '_blank');
+          if (w) {
+            console.log('[Article] popup opened — closing to create history entry');
+            setTimeout(() => { try { w.close(); } catch(e){console.warn(e);} }, 300);
+          } else {
+            console.warn('[Article] popup blocked');
+          }
+        } catch (e) {
+          console.warn('[Article] popupTrick failed', e);
+        }
+      }
+
+      // 3) Meta refresh redirect (serverless, but navigates away-and-back if used with intermediate page)
+      // Not implemented here but described in README.
+
+      // expose for debugging via console
+      window._demo = { hackHistory, fragmentTrick, popupTrick };
+
     })();
   </script>
 </body>
