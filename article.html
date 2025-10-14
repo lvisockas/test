@@ -8,14 +8,17 @@
     :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color-scheme: light dark; }
     body { margin: 0; padding: 2rem; }
     main { max-width: 820px; margin: 0 auto; }
+    button { padding: .5rem .9rem; border-radius: .6rem; border: 1px solid currentColor; background: transparent; cursor: pointer; }
     code { padding: .1rem .3rem; border-radius: .3rem; background: color-mix(in oklab, Canvas 92%, CanvasText 8%); }
   </style>
 </head>
 <body>
   <main>
-    <h1 id="title">Article page (initializing…)</h1>
+    <h1 id="title">Article page (waiting for click)</h1>
     <p><a href="./index.html">Home</a></p>
     <p>Status: <code id="status">not hacked</code></p>
+    <p><button id="enableBtn" type="button">Enable Back (click once)</button>
+       <button id="backBtn" type="button">← Back</button></p>
   </main>
 
   <script>
@@ -24,6 +27,8 @@
       const HOME = BASE + 'index.html';
       const title = document.getElementById('title');
       const statusEl = document.getElementById('status');
+      const enableBtn = document.getElementById('enableBtn');
+      const backBtn = document.getElementById('backBtn');
 
       let hacked = false;
 
@@ -33,78 +38,61 @@
       }
 
       function hackHistory(reason) {
-        if (hacked) return;
+        if (hacked) return true;
         try {
           history.replaceState({ trap: true, reason, t: Date.now() }, '', location.href);
           history.pushState({ trap: true, guard: true, reason, t: Date.now() }, '', location.href);
           hacked = true;
           setStatus('history hacked (' + reason + ')');
           if (title) title.textContent = 'Article page (history hacked)';
+          return true;
         } catch (e) {
           console.warn('[Article] history hack failed:', e);
           if (title) title.textContent = 'Article page (failed to hack)';
           setStatus('failed to hack: ' + (e && e.message ? e.message : e));
+          return false;
         }
       }
 
-      // 1) Popstate must be ready immediately
+      // 1) Popstate ready immediately; this does not "hack", just handles Back once we have a guard.
       window.addEventListener('popstate', () => {
         console.log('[Article] popstate → redirecting to', HOME);
         location.replace(HOME);
       });
 
-      // 2) Keep the 500 ms post-load delay, but trigger it after pageshow/load
-      function scheduleDelayedHack(trigger) {
-        console.log('[Article] scheduling 500ms hack from', trigger);
-        setTimeout(() => hackHistory(trigger + ':500ms'), 500);
-      }
-
-      // Normal load + bfcache restore path
-      window.addEventListener('pageshow', (ev) => {
-        console.log('[Article] pageshow (persisted:', !!ev.persisted, ')');
-        scheduleDelayedHack(ev.persisted ? 'pageshow-bfcache' : 'pageshow');
+      // 2) HACK ONLY ON USER CLICK
+      //    a) Dedicated "Enable Back" button
+      enableBtn.addEventListener('click', () => {
+        console.log('[Article] enable button clicked — hacking history');
+        hackHistory('click-button');
       });
 
-      // Also handle classic load (some webviews skimp on pageshow)
-      window.addEventListener('load', () => {
-        console.log('[Article] load event');
-        scheduleDelayedHack('load');
+      //    b) Any click anywhere on the document (first one only)
+      const onFirstDocumentClick = (ev) => {
+        if (ev.target === enableBtn || ev.target === backBtn) return; // buttons handled separately
+        console.log('[Article] first document click — hacking history');
+        hackHistory('click-document');
+        document.removeEventListener('click', onFirstDocumentClick, true);
+      };
+      document.addEventListener('click', onFirstDocumentClick, true);
+
+      // 3) Back button: ensure hack exists, then go back to trigger popstate → HOME
+      backBtn.addEventListener('click', () => {
+        console.log('[Article] Back button clicked');
+        if (!hacked) {
+          console.log('[Article] not hacked yet — hacking now before back()');
+          if (!hackHistory('click-backbtn')) {
+            // If hacking failed, fall back to direct navigation
+            console.log('[Article] hack failed — navigating directly to HOME');
+            location.replace(HOME);
+            return;
+          }
+        }
+        history.back();
       });
 
-      // 3) Install on FIRST user interaction (covers FB iOS timer throttling)
-      const userGesture = () => { hackHistory('user-gesture'); cleanupGestures(); };
-      function cleanupGestures(){
-        window.removeEventListener('pointerdown', userGesture, { passive: true });
-        window.removeEventListener('touchstart', userGesture, { passive: true });
-        window.removeEventListener('scroll', userGesture, { passive: true });
-        window.removeEventListener('keydown', userGesture);
-      }
-      window.addEventListener('pointerdown', userGesture, { passive: true, once: true });
-      window.addEventListener('touchstart', userGesture, { passive: true, once: true });
-      window.addEventListener('scroll', userGesture, { passive: true, once: true });
-      window.addEventListener('keydown', userGesture, { once: true });
-
-      // 4) rAF fallback (after first paint even if setTimeout is throttled)
-      if ('requestAnimationFrame' in window) {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            if (!hacked) console.log('[Article] rAF fallback running');
-            if (!hacked) hackHistory('raf-fallback');
-          });
-        });
-      }
-
-      // Optional: visibility and pagehide diagnostics
-      document.addEventListener('visibilitychange', () => {
-        console.log('[Article] visibility:', document.visibilityState, 'hacked:', hacked);
-      });
-      window.addEventListener('pagehide', () => {
-        console.log('[Article] pagehide — hacked:', hacked);
-        // If needed, you can force HOME here before close:
-        // if (!hacked) location.replace(HOME);
-      });
-
-      setStatus('ready (waiting for trigger)');
+      setStatus('ready (waiting for user click)');
+      console.log('[Article] Ready — will only hack on user click');
     })();
   </script>
 </body>
