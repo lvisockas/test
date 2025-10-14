@@ -13,41 +13,99 @@
 </head>
 <body>
   <main>
-    <h1 id="title">Article page (waiting 500 ms…)</h1>
+    <h1 id="title">Article page (initializing…)</h1>
     <p><a href="./index.html">Home</a></p>
-    <p>Status: <code id="status">initial</code></p>
+    <p>Status: <code id="status">not hacked</code></p>
   </main>
 
   <script>
-    console.log('[Article] Script loaded');
-
-    window.onload = function() {
-      console.log('[Article] onload fired — waiting 500ms before history manipulation');
+    (function () {
       const BASE = location.pathname.replace(/\/[^\/]*$/, '/');
       const HOME = BASE + 'index.html';
       const title = document.getElementById('title');
       const statusEl = document.getElementById('status');
 
-      window.addEventListener('popstate', function() {
-        console.log('[Article] popstate fired — redirecting to homepage');
+      let hacked = false;
+
+      function setStatus(text) {
+        console.log('[Article]', text);
+        if (statusEl) statusEl.textContent = text;
+      }
+
+      function hackHistory(reason) {
+        if (hacked) return;
+        try {
+          history.replaceState({ trap: true, reason, t: Date.now() }, '', location.href);
+          history.pushState({ trap: true, guard: true, reason, t: Date.now() }, '', location.href);
+          hacked = true;
+          setStatus('history hacked (' + reason + ')');
+          if (title) title.textContent = 'Article page (history hacked)';
+        } catch (e) {
+          console.warn('[Article] history hack failed:', e);
+          if (title) title.textContent = 'Article page (failed to hack)';
+          setStatus('failed to hack: ' + (e && e.message ? e.message : e));
+        }
+      }
+
+      // 1) Popstate must be ready immediately
+      window.addEventListener('popstate', () => {
+        console.log('[Article] popstate → redirecting to', HOME);
         location.replace(HOME);
       });
 
-      setTimeout(() => {
-        console.log('[Article] Attempting to modify history after 500ms');
-        try {
-          history.replaceState({ trap: true, at: Date.now() }, '', location.href);
-          history.pushState({ trap: true, guard: true, at: Date.now() }, '', location.href);
-          title.textContent = 'Article page (history hacked)';
-          statusEl.textContent = 'history hacked after 500ms';
-          console.log('[Article] History successfully modified');
-        } catch (e) {
-          title.textContent = 'Article page (failed to hack)';
-          statusEl.textContent = 'failed: ' + (e && e.message ? e.message : e);
-          console.error('[Article] Failed to modify history:', e);
-        }
-      }, 500);
-    };
+      // 2) Keep the 500 ms post-load delay, but trigger it after pageshow/load
+      function scheduleDelayedHack(trigger) {
+        console.log('[Article] scheduling 500ms hack from', trigger);
+        setTimeout(() => hackHistory(trigger + ':500ms'), 500);
+      }
+
+      // Normal load + bfcache restore path
+      window.addEventListener('pageshow', (ev) => {
+        console.log('[Article] pageshow (persisted:', !!ev.persisted, ')');
+        scheduleDelayedHack(ev.persisted ? 'pageshow-bfcache' : 'pageshow');
+      });
+
+      // Also handle classic load (some webviews skimp on pageshow)
+      window.addEventListener('load', () => {
+        console.log('[Article] load event');
+        scheduleDelayedHack('load');
+      });
+
+      // 3) Install on FIRST user interaction (covers FB iOS timer throttling)
+      const userGesture = () => { hackHistory('user-gesture'); cleanupGestures(); };
+      function cleanupGestures(){
+        window.removeEventListener('pointerdown', userGesture, { passive: true });
+        window.removeEventListener('touchstart', userGesture, { passive: true });
+        window.removeEventListener('scroll', userGesture, { passive: true });
+        window.removeEventListener('keydown', userGesture);
+      }
+      window.addEventListener('pointerdown', userGesture, { passive: true, once: true });
+      window.addEventListener('touchstart', userGesture, { passive: true, once: true });
+      window.addEventListener('scroll', userGesture, { passive: true, once: true });
+      window.addEventListener('keydown', userGesture, { once: true });
+
+      // 4) rAF fallback (after first paint even if setTimeout is throttled)
+      if ('requestAnimationFrame' in window) {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (!hacked) console.log('[Article] rAF fallback running');
+            if (!hacked) hackHistory('raf-fallback');
+          });
+        });
+      }
+
+      // Optional: visibility and pagehide diagnostics
+      document.addEventListener('visibilitychange', () => {
+        console.log('[Article] visibility:', document.visibilityState, 'hacked:', hacked);
+      });
+      window.addEventListener('pagehide', () => {
+        console.log('[Article] pagehide — hacked:', hacked);
+        // If needed, you can force HOME here before close:
+        // if (!hacked) location.replace(HOME);
+      });
+
+      setStatus('ready (waiting for trigger)');
+    })();
   </script>
 </body>
 </html>
