@@ -2,61 +2,71 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Demo Article · GH Pages + History API</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Article page</title>
   <style>
     :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color-scheme: light dark; }
     body { margin: 0; padding: 2rem; }
-    header { max-width: 820px; margin: 0 auto 1.25rem; display:flex; align-items: center; gap:.75rem; }
-    button { padding: .55rem .85rem; border-radius: 10px; border: 1px solid currentColor; background: transparent; cursor: pointer; }
     main { max-width: 820px; margin: 0 auto; }
-    h1 { margin: .25rem 0 1rem; font-size: clamp(1.4rem, 3vw, 2rem); }
-    .meta { opacity: .65; margin-bottom: 1rem; }
-    p { line-height: 1.55; }
-    .tip { margin-top: 2rem; opacity: .7; font-size: .9rem; }
+    code { padding: .1rem .3rem; border-radius: .3rem; background: color-mix(in oklab, Canvas 92%, CanvasText 8%); }
   </style>
 </head>
 <body>
-  <header>
-    <button id="backBtn" type="button">← Back</button>
-    <div>Reading</div>
-  </header>
-
   <main>
-    <h1>How to Use the History API</h1>
-    <div class="meta">By Dev · Demo article</div>
-    <p>This page guarantees that pressing Back returns you to the homepage even if you landed here directly (new tab / bookmark).</p>
-    <p>Technique:</p>
-    <ol>
-      <li><strong>replaceState</strong> marks the current entry as ours.</li>
-      <li><strong>pushState</strong> adds an extra entry so the first Back stays in-page and fires <code>popstate</code>.</li>
-      <li><strong>popstate</strong> handler <code>location.replace()</code>s to <code>index.html</code>.</li>
-    </ol>
-    <p>Try it: press your browser’s Back button or the Back button above.</p>
-    <p class="tip">Works for both user and project GitHub Pages.</p>
+    <h1 id="title">Article page (setting up…)</h1>
+    <p><a href="./index.html">Home</a></p>
+    <p>Status: <code id="status">initial</code></p>
   </main>
 
   <script>
     (function() {
       const BASE = location.pathname.replace(/\/[^\/]*$/, '/');
       const HOME = BASE + 'index.html';
+      const title = document.getElementById('title');
+      const statusEl = document.getElementById('status');
+      let hacked = false;
 
-      // Step 1: ensure the current entry is ours
-      history.replaceState({ trap: true }, '', location.href);
-
-      // Step 2: add a guard entry so the FIRST back pops within this document
-      // (this is crucial when the initial previous entry is cross-site or blank)
-      history.pushState({ trap: true, guard: true }, '', location.href);
-
-      // Step 3: when back pops us to the first in-page entry, redirect to home
-      window.addEventListener('popstate', function(ev) {
-        // Use replace so Forward returns to where the user came from.
+      // Always listen for back. If a guard entry exists (after we hack),
+      // the first Back will pop and we redirect to HOME.
+      window.addEventListener('popstate', function() {
         location.replace(HOME);
       });
 
-      // Optional manual back button
-      document.getElementById('backBtn').addEventListener('click', function() {
-        history.back();
+      function setupHistoryTrap() {
+        try {
+          // Mark current entry as ours, then add a guard entry.
+          history.replaceState({ trap: true, at: Date.now() }, '', location.href);
+          history.pushState({ trap: true, guard: true, at: Date.now() }, '', location.href);
+          hacked = true;
+          statusEl.textContent = 'history hacked';
+          title.textContent = 'Article page (history hacked)';
+        } catch (e) {
+          statusEl.textContent = 'failed: ' + (e && e.message ? e.message : e);
+          title.textContent = 'Article page (failed to hack)';
+        }
+      }
+
+      // Delay the manipulation to simulate/avoid early lifecycle issues.
+      // Prefer requestIdleCallback -> requestAnimationFrame -> setTimeout.
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(setupHistoryTrap, { timeout: 800 });
+        statusEl.textContent = 'waiting (idle)';
+      } else if ('requestAnimationFrame' in window) {
+        requestAnimationFrame(function() {
+          setTimeout(setupHistoryTrap, 50);
+        });
+        statusEl.textContent = 'waiting (raf+timeout)';
+      } else {
+        setTimeout(setupHistoryTrap, 150);
+        statusEl.textContent = 'waiting (timeout)';
+      }
+
+      // Update UI if user navigates away before we hack (best-effort only).
+      document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden' && !hacked) {
+          statusEl.textContent = 'navigating away before hack';
+          title.textContent = 'Article page (no trap)';
+        }
       });
     })();
   </script>
