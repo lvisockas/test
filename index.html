@@ -21,36 +21,29 @@
 <body>
   <header>
     <h1>Homepage Feed</h1>
-    <p class="lead">Click an item to open the article page. This page also registers a client-side route using the History API.</p>
+    <p class="lead">Click an item to open the article page. This is static and GitHub Pages-friendly.</p>
   </header>
 
   <main class="feed" id="feed">
     <article>
       <div class="title">How to Use the History API</div>
       <div class="meta">By Dev, 2 min read</div>
-      <a class="btn" href="./article.html" data-route>Read article</a>
+      <!-- Plain link; article page handles history trapping -->
+      <a class="btn" href="./article.html">Read article</a>
     </article>
 
     <article>
       <div class="title">Another Post</div>
       <div class="meta">By Dev, 1 min read</div>
-      <a class="btn" href="./article.html#alt" data-route>Read article</a>
+      <a class="btn" href="./article.html#alt">Read article</a>
     </article>
 
-    <p class="tip">Tip: If JS is enabled, clicks are pushed to history first for a smooth SPA-like feel.</p>
+    <p class="tip">Tip: The article page ensures Back leads here, even if you opened it directly.</p>
   </main>
 
   <script>
-    const BASE = location.pathname.replace(/\/[^\/]*$/, '/');
-    document.addEventListener('click', (e) => {
-      const a = e.target.closest('a[data-route]');
-      if (!a) return;
-      e.preventDefault();
-      const to = new URL(a.getAttribute('href'), location.origin + BASE);
-      history.pushState({ page: 'article', from: 'index' }, '', to.pathname + to.search + to.hash);
-      location.href = to;
-    });
-    window.addEventListener('popstate', (ev) => {});
+    // Optional: nothing needed here for the back behavior.
+    // Keep this file dead-simple so navigation works even with JS disabled.
   </script>
 </body>
 </html>

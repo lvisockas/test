@@ -25,27 +25,40 @@
   <main>
     <h1>How to Use the History API</h1>
     <div class="meta">By Dev · Demo article</div>
-    <p>This page ensures that pressing your browser’s Back button returns you to the homepage even if you arrived here directly.</p>
-    <p>On load, we:</p>
+    <p>This page guarantees that pressing Back returns you to the homepage even if you landed here directly (new tab / bookmark).</p>
+    <p>Technique:</p>
     <ol>
-      <li><strong>Insert a guard history entry</strong> so there’s something to “pop” back to.</li>
-      <li><strong>Intercept popstate</strong> and route to <code>index.html</code>.</li>
+      <li><strong>replaceState</strong> marks the current entry as ours.</li>
+      <li><strong>pushState</strong> adds an extra entry so the first Back stays in-page and fires <code>popstate</code>.</li>
+      <li><strong>popstate</strong> handler <code>location.replace()</code>s to <code>index.html</code>.</li>
     </ol>
-    <p>Click your browser’s Back button (or the Back button above) to see it in action.</p>
+    <p>Try it: press your browser’s Back button or the Back button above.</p>
+    <p class="tip">Works for both user and project GitHub Pages.</p>
   </main>
 
   <script>
-    const BASE = location.pathname.replace(/\/[^\/]*$/, '/');
-    const HOME = BASE + 'index.html';
-    if (!history.state || history.state.page !== 'article-guard') {
-      history.pushState({ page: 'article-guard' }, '', location.href);
-    }
-    window.addEventListener('popstate', (ev) => {
-      location.replace(HOME);
-    });
-    document.getElementById('backBtn').addEventListener('click', () => {
-      history.back();
-    });
+    (function() {
+      const BASE = location.pathname.replace(/\/[^\/]*$/, '/');
+      const HOME = BASE + 'index.html';
+
+      // Step 1: ensure the current entry is ours
+      history.replaceState({ trap: true }, '', location.href);
+
+      // Step 2: add a guard entry so the FIRST back pops within this document
+      // (this is crucial when the initial previous entry is cross-site or blank)
+      history.pushState({ trap: true, guard: true }, '', location.href);
+
+      // Step 3: when back pops us to the first in-page entry, redirect to home
+      window.addEventListener('popstate', function(ev) {
+        // Use replace so Forward returns to where the user came from.
+        location.replace(HOME);
+      });
+
+      // Optional manual back button
+      document.getElementById('backBtn').addEventListener('click', function() {
+        history.back();
+      });
+    })();
   </script>
 </body>
 </html>
