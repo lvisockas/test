@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Minimal Mystic Calculators</title>
+  <style>
+    :root {
+      --bg: #f7f8f9;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #4caf50; /* inspired green */
+      --accent-weak: #e7f5e8;
+      --border: #e5e7eb;
+      --radius: 16px;
+      --shadow: 0 10px 25px rgba(0,0,0,0.06);
+    }
+    @media (prefers-color-scheme: dark){
+      :root{
+        --bg: #0b0d10;
+        --card: #111417;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --accent-weak: #0e2d12;
+        --border: #1f2937;
+        --shadow: 0 10px 25px rgba(0,0,0,0.3);
+      }
+    }
+    *{ box-sizing: border-box; }
+    html, body{ height: 100%; }
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: var(--bg); color: var(--text);
+      display:flex; align-items:flex-start; justify-content:center;
+    }
+    .wrap{ width: min(960px, 92vw); padding: 32px 0 80px; }
+    header{ text-align:center; margin-bottom: 28px; }
+    h1{ font-size: clamp(24px, 3vw, 34px); line-height:1.15; margin:0 0 8px; }
+    .sub{ color: var(--muted); font-size: 15px; }
+
+    .tabs{ display:flex; gap:10px; margin: 18px 0 8px; flex-wrap: wrap; }
+    .tab-btn{
+      border: 1px solid var(--border); background: var(--card); color: var(--text);
+      padding: 10px 14px; border-radius: 999px; cursor:pointer; transition:.2s;
+      font-weight:600; font-size:14px; box-shadow: var(--shadow);
+    }
+    .tab-btn[aria-selected="true"], .tab-btn:focus-visible{ outline:none; border-color:var(--accent); background: var(--accent-weak); }
+
+    .card{ background: var(--card); border:1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; }
+    .grid{ display:grid; gap: 14px; }
+    .grid-2{ grid-template-columns: 1fr; }
+    @media (min-width: 760px){ .grid-2{ grid-template-columns: 1fr 1fr; } }
+
+    label{ display:block; font-weight:600; margin: 8px 0 6px; }
+    input[type="text"], input[type="date"], select{ width:100%; padding:12px 14px; border:1px solid var(--border); border-radius: 12px; background: var(--bg); color: var(--text); outline:none; }
+    input::placeholder{ color: var(--muted); }
+
+    .btn{ background: var(--accent); border:none; color:white; font-weight:700; padding:12px 16px; border-radius: 12px; cursor:pointer; transition:.2s; }
+    .btn:hover{ filter: brightness(0.95); }
+
+    .result{ border-radius: 14px; padding: 14px; background: var(--accent-weak); border:1px solid var(--border); }
+    .result h3{ margin: 4px 0 6px; font-size: 18px; }
+    .muted{ color: var(--muted); }
+    .chips{ display:flex; gap:8px; flex-wrap: wrap; }
+    .chip{ padding: 8px 12px; border-radius:999px; border:1px dashed var(--border); background:transparent; font-size:12px; }
+
+    footer{ text-align:center; color:var(--muted); font-size:12px; margin-top:16px; }
+    .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <h1>Minimal Mystic Calculators</h1>
+      <p class="sub">Clean, focused tools inspired by the simple, rounded survey style you shared.</p>
+      <nav class="tabs" role="tablist" aria-label="Calculators">
+        <button class="tab-btn" role="tab" aria-selected="true" aria-controls="tab1" id="t1">Horoscope Match</button>
+        <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab2" id="t2">Name ↔ Work</button>
+        <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab3" id="t3">Birthday Numerology</button>
+      </nav>
+    </header>
+
+    <!-- Tab 1 -->
+    <section id="tab1" role="tabpanel" aria-labelledby="t1" class="card grid">
+      <h2 class="sr-only">Horoscope Compatibility</h2>
+      <div class="grid grid-2">
+        <div>
+          <label for="youDob">Your birthday</label>
+          <input id="youDob" type="date" />
+        </div>
+        <div>
+          <label for="partnerDob">Partner's birthday</label>
+          <input id="partnerDob" type="date" />
+        </div>
+      </div>
+      <div class="chips" id="zodiacPreview"></div>
+      <div>
+        <button class="btn" id="calcZodiac">Calculate compatibility</button>
+      </div>
+      <div id="zodiacResult" class="result" hidden></div>
+    </section>
+
+    <!-- Tab 2 -->
+    <section id="tab2" role="tabpanel" aria-labelledby="t2" class="card grid" hidden>
+      <h2 class="sr-only">Name & Work Compatibility</h2>
+      <div class="grid grid-2">
+        <div>
+          <label for="yourName">Your name</label>
+          <input id="yourName" type="text" placeholder="e.g., Alex Carter" />
+        </div>
+        <div>
+          <label for="workName">Work / Company / Project name</label>
+          <input id="workName" type="text" placeholder="e.g., BrightLabs" />
+        </div>
+      </div>
+      <div>
+        <button class="btn" id="calcName">Check compatibility</button>
+      </div>
+      <div id="nameResult" class="result" hidden></div>
+    </section>
+
+    <!-- Tab 3 -->
+    <section id="tab3" role="tabpanel" aria-labelledby="t3" class="card grid" hidden>
+      <h2 class="sr-only">Birthday Numerology</h2>
+      <div class="grid grid-2">
+        <div>
+          <label for="onlyDob">Your birthday</label>
+          <input id="onlyDob" type="date" />
+        </div>
+        <div>
+          <label for="focus">Focus</label>
+          <select id="focus">
+            <option value="work">Work</option>
+            <option value="hobby">Hobby</option>
+            <option value="love">Relationships</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <button class="btn" id="calcLife">Get insights</button>
+      </div>
+      <div id="lifeResult" class="result" hidden></div>
+    </section>
+
+    <footer>For fun & reflection – not a substitute for professional advice ✨</footer>
+  </main>
+
+  <script>
+    // --- Tab logic ---
+    const tabs = document.querySelectorAll('.tab-btn');
+    const panels = [document.getElementById('tab1'), document.getElementById('tab2'), document.getElementById('tab3')];
+    tabs.forEach((btn, i)=>{
+      btn.addEventListener('click', () => {
+        tabs.forEach(b => b.setAttribute('aria-selected','false'));
+        panels.forEach(p => p.hidden = true);
+        btn.setAttribute('aria-selected','true');
+        panels[i].hidden = false;
+      })
+    });
+
+    // --- Helpers ---
+    function fmtPct(n){ return Math.round(n) + '%'; }
+    function clamp(n, min=0, max=100){ return Math.max(min, Math.min(max, n)); }
+
+    // --- Zodiac ---
+    const ZODIACS = [
+      { sign:'Capricorn',  start:'01-01', end:'01-19', element:'Earth' },
+      { sign:'Aquarius',   start:'01-20', end:'02-18', element:'Air' },
+      { sign:'Pisces',     start:'02-19', end:'03-20', element:'Water' },
+      { sign:'Aries',      start:'03-21', end:'04-19', element:'Fire' },
+      { sign:'Taurus',     start:'04-20', end:'05-20', element:'Earth' },
+      { sign:'Gemini',     start:'05-21', end:'06-20', element:'Air' },
+      { sign:'Cancer',     start:'06-21', end:'07-22', element:'Water' },
+      { sign:'Leo',        start:'07-23', end:'08-22', element:'Fire' },
+      { sign:'Virgo',      start:'08-23', end:'09-22', element:'Earth' },
+      { sign:'Libra',      start:'09-23', end:'10-22', element:'Air' },
+      { sign:'Scorpio',    start:'10-23', end:'11-21', element:'Water' },
+      { sign:'Sagittarius',start:'11-22', end:'12-21', element:'Fire' },
+      { sign:'Capricorn',  start:'12-22', end:'12-31', element:'Earth' },
+    ];
+    function inRange(mmdd, start, end){ return mmdd >= start && mmdd <= end; }
+    function zodiacFor(dateStr){
+      if(!dateStr) return null;
+      const d = new Date(dateStr);
+      const mm = String(d.getMonth()+1).padStart(2,'0');
+      const dd = String(d.getDate()).padStart(2,'0');
+      const mmdd = `${mm}-${dd}`;
+      return ZODIACS.find(z => inRange(mmdd, z.start, z.end));
+    }
+
+    const ELEMENT_MATCH = {
+      'Fire':   { 'Fire': 86, 'Air': 78, 'Water': 54, 'Earth': 62 },
+      'Earth':  { 'Fire': 62, 'Air': 58, 'Water': 74, 'Earth': 84 },
+      'Air':    { 'Fire': 78, 'Air': 82, 'Water': 56, 'Earth': 60 },
+      'Water':  { 'Fire': 54, 'Air': 56, 'Water': 86, 'Earth': 74 }
+    };
+
+    function zodiacCompatibility(z1, z2){
+      if(!z1 || !z2) return { score: null, text: 'Pick both birthdays.' };
+      const base = ELEMENT_MATCH[z1.element][z2.element];
+      // Slight spice: if signs are opposites (roughly 6 apart), nudge score
+      const order = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
+      const i1 = order.indexOf(z1.sign); const i2 = order.indexOf(z2.sign);
+      let score = base;
+      if(i1>-1 && i2>-1){
+        const diff = Math.abs(i1 - i2);
+        if(diff === 6) score += 6; // opposites attract boost
+        if(diff === 0) score += 4; // same sign familiarity bump
+      }
+      score = clamp(score);
+      const vibe = score>=80? 'Excellent vibes' : score>=70? 'Strong chemistry' : score>=60? 'Promising with balance' : score>=50? 'Mixed – communication is key' : 'Challenging – growth if both commit';
+      return { score, text: `${vibe}. (${z1.sign} ${z1.element} × ${z2.sign} ${z2.element})` };
+    }
+
+    const preview = document.getElementById('zodiacPreview');
+    function renderPreview(){
+      const a = zodiacFor(document.getElementById('youDob').value);
+      const b = zodiacFor(document.getElementById('partnerDob').value);
+      preview.innerHTML = '';
+      if(a) preview.insertAdjacentHTML('beforeend', `<span class="chip">You: ${a.sign}</span>`);
+      if(b) preview.insertAdjacentHTML('beforeend', `<span class="chip">Partner: ${b.sign}</span>`);
+    }
+    document.getElementById('youDob').addEventListener('change', renderPreview);
+    document.getElementById('partnerDob').addEventListener('change', renderPreview);
+
+    document.getElementById('calcZodiac').addEventListener('click', ()=>{
+      const a = zodiacFor(document.getElementById('youDob').value);
+      const b = zodiacFor(document.getElementById('partnerDob').value);
+      const out = document.getElementById('zodiacResult');
+      const {score, text} = zodiacCompatibility(a,b);
+      if(score==null){ out.hidden=false; out.innerHTML = `<h3>We need both birthdays</h3><p class="muted">Add dates above and try again.</p>`; return; }
+      out.hidden=false;
+      out.innerHTML = `<h3>Compatibility: ${fmtPct(score)}</h3><p>${text}</p>`;
+    });
+
+    // --- Name ↔ Work (Pythagorean numerology for names) ---
+    const LETTERS = {A:1,B:2,C:3,D:4,E:5,F:6,G:7,H:8,I:9,J:1,K:2,L:3,M:4,N:5,O:6,P:7,Q:8,R:9,S:1,T:2,U:3,V:4,W:5,X:6,Y:7,Z:8};
+    function nameNumber(str){
+      if(!str) return null;
+      const sum = (str.toUpperCase().match(/[A-Z]/g)||[]).reduce((t,ch)=> t + (LETTERS[ch]||0), 0);
+      // Reduce to 1-9, keep master 11/22
+      function reduce(n){
+        if(n===11 || n===22) return n; 
+        while(n>9){ n = String(n).split('').reduce((a,b)=>a+Number(b),0); if(n===11||n===22) return n; }
+        return n;
+      }
+      return reduce(sum);
+    }
+    function nameCompatibility(n1, n2){
+      if(n1==null || n2==null) return {score:null, blurb:'Enter both names.'};
+      const diff = Math.abs(n1 - n2);
+      let score = 96 - diff*10; // 0 diff -> ~96, 1 -> 86, ...
+      if(n1===11 || n1===22 || n2===11 || n2===22) score += 2; // light bonus for master
+      score = clamp(score);
+      const tone = score>=85? 'Natural fit' : score>=75? 'Very compatible' : score>=65? 'Solid potential' : score>=55? 'Workable with communication' : 'Different rhythms';
+      const pairing = `Your number ${n1} × Work number ${n2}`;
+      return {score, blurb: `${tone}. ${pairing}.`};
+    }
+    document.getElementById('calcName').addEventListener('click', ()=>{
+      const n1 = nameNumber(document.getElementById('yourName').value);
+      const n2 = nameNumber(document.getElementById('workName').value);
+      const out = document.getElementById('nameResult');
+      if(n1==null || n2==null){ out.hidden=false; out.innerHTML = `<h3>We need both names</h3><p class="muted">Type your name and the work / company / project name.</p>`; return; }
+      const {score, blurb} = nameCompatibility(n1,n2);
+      const tips = {
+        1:'Leadership, autonomy, bold branding.',
+        2:'Partnerships, client care, diplomacy.',
+        3:'Creativity, marketing, social reach.',
+        4:'Systems, operations, steady growth.',
+        5:'Adaptability, sales, product iteration.',
+        6:'Service, community trust, design polish.',
+        7:'R&D, depth, thoughtful strategy.',
+        8:'Scaling, finance focus, ambition.',
+        9:'Mission-led, impact and storytelling.',
+        11:'Vision, innovation, inspiring culture.',
+        22:'Big-build projects, platforms, legacy.'
+      };
+      out.hidden=false;
+      out.innerHTML = `<h3>Compatibility: ${fmtPct(score)}</h3>
+        <p>${blurb}</p>
+        <p class="muted">Your name energy suggests: <b>${tips[n1]}</b><br/>Work name energy suggests: <b>${tips[n2]}</b></p>`;
+    });
+
+    // --- Life Path from birthday ---
+    function lifePath(dateStr){
+      if(!dateStr) return null;
+      const d = new Date(dateStr);
+      const digits = `${d.getFullYear()}${d.getMonth()+1}${d.getDate()}`.replace(/[^0-9]/g,'');
+      let n = digits.split('').reduce((a,b)=>a+Number(b),0);
+      const keepMaster = (x)=> x===11 || x===22 || x===33;
+      while(n>9 && !keepMaster(n)) n = String(n).split('').reduce((a,b)=>a+Number(b),0);
+      return n;
+    }
+
+    const LIFE_TIPS = {
+      1: { work:'Own initiatives, lead sprints, decide quickly.', hobby:'Solo challenges, chess, speed runs.', love:'Give partners room; soften the edge.' },
+      2: { work:'Collaborate, mediate, manage stakeholders.', hobby:'Duo activities, co-op games.', love:'Slow build trust, listen deeply.' },
+      3: { work:'Present, market, brainstorm loudly.', hobby:'Writing, music, improv.', love:'Playful dates; avoid overpromising.' },
+      4: { work:'Process, QA, build reliable systems.', hobby:'DIY, gardening, puzzles.', love:'Consistency speaks love.' },
+      5: { work:'Sales, growth, experiments, travel.', hobby:'Outdoor sports, spontaneity.', love:'Keep novelty; set gentle boundaries.' },
+      6: { work:'Design, people care, culture building.', hobby:'Cooking, crafts, home projects.', love:'Nurture without over-parenting.' },
+      7: { work:'Analytics, research, deep focus tasks.', hobby:'Reading, strategy games.', love:'Open up; share inner world.' },
+      8: { work:'Targets, negotiations, ownership.', hobby:'Fitness goals, investments.', love:'Respect ambition on both sides.' },
+      9: { work:'Impact projects, comms, mentoring.', hobby:'Volunteering, arts, travel.', love:'Lead with empathy; release past.' },
+      11:{ work:'Vision decks, innovation labs.', hobby:'Photography, meditation.', love:'Protect alone-time to recharge.' },
+      22:{ work:'Platforms, operations at scale.', hobby:'Architecture, sim-building.', love:'Dream big together, plan steps.' },
+      33:{ work:'Teaching, community programs.', hobby:'Choirs, group art.', love:'Practice boundaries while caring.' }
+    };
+
+    document.getElementById('calcLife').addEventListener('click', ()=>{
+      const n = lifePath(document.getElementById('onlyDob').value);
+      const focus = document.getElementById('focus').value;
+      const out = document.getElementById('lifeResult');
+      if(!n){ out.hidden=false; out.innerHTML = `<h3>We need your birthday</h3><p class="muted">Pick a date and try again.</p>`; return; }
+      const tips = LIFE_TIPS[n];
+      out.hidden=false;
+      out.innerHTML = `<h3>Life Path ${n}</h3><p>${tips[focus]}</p>
+                       <p class="muted">Other focuses → Work: <b>${tips.work}</b> • Hobby: <b>${tips.hobby}</b> • Relationships: <b>${tips.love}</b></p>`;
+    });
+  </script>
+</body>
+</html>
