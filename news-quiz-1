@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>True or Fake Quiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+
+  <body class="min-h-full bg-neutral-950 text-neutral-100">
+    <div class="mx-auto max-w-3xl px-4 py-10">
+      <header class="mb-8">
+        <h1 class="text-2xl font-semibold tracking-tight">True or Fake</h1>
+        <p class="mt-2 text-sm text-neutral-400">
+          Tap the statement you think is
+          <span class="text-neutral-200">true</span>. You’ll get instant
+          feedback and a link to the real story.
+        </p>
+      </header>
+
+      <!-- Quiz -->
+      <section id="quiz" class="space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="text-sm text-neutral-400">
+            <span id="progressText"></span>
+          </div>
+          <button
+            id="restartBtn"
+            class="rounded-lg border border-neutral-800 px-3 py-1.5 text-xs text-neutral-200 hover:bg-neutral-800/40"
+            type="button"
+          >
+            Restart
+          </button>
+        </div>
+
+        <div
+          class="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5"
+        >
+          <!-- Cover image placeholder (16:9) -->
+          <div class="overflow-hidden rounded-2xl border border-neutral-800">
+            <div id="coverBox" class="relative aspect-video w-full">
+              <div
+                class="absolute inset-0 flex items-center justify-center p-6"
+              >
+                <div class="max-w-xl text-center">
+                  <div
+                    class="mx-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-wide text-white/70"
+                  >
+                    Cover image prompt
+                  </div>
+                  <div
+                    id="coverPrompt"
+                    class="mt-3 text-sm md:text-base font-medium text-white/90"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="mt-5 text-xs font-medium uppercase tracking-wide text-neutral-500"
+          >
+            Story
+          </div>
+          <p
+            id="introText"
+            class="mt-2 text-base leading-relaxed text-neutral-100"
+          ></p>
+
+          <div class="mt-6">
+            <div
+              class="text-xs font-medium uppercase tracking-wide text-neutral-500"
+            >
+              Pick the true statement
+            </div>
+            <div id="options" class="mt-3 grid gap-2"></div>
+          </div>
+
+          <div
+            id="feedback"
+            class="mt-4 hidden rounded-xl border px-4 py-3 text-sm"
+          ></div>
+
+          <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+            <div class="text-xs text-neutral-500">
+              Score: <span id="scoreText" class="text-neutral-300"></span>
+            </div>
+            <button
+              id="nextBtn"
+              class="hidden rounded-xl bg-white px-4 py-2 text-sm font-medium text-neutral-900 hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-white/40"
+              type="button"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Results -->
+      <section id="results" class="hidden space-y-4">
+        <div
+          class="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-6"
+        >
+          <div
+            class="text-xs font-medium uppercase tracking-wide text-neutral-500"
+          >
+            Results
+          </div>
+          <div class="mt-3">
+            <div class="text-3xl font-semibold" id="percentText">0%</div>
+            <div class="mt-2 text-sm text-neutral-400" id="rawScoreText"></div>
+          </div>
+
+          <div class="mt-5 flex flex-wrap gap-3">
+            <button
+              id="playAgainBtn"
+              class="rounded-xl bg-white px-4 py-2 text-sm font-medium text-neutral-900 hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-white/40"
+              type="button"
+            >
+              Play again
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      // ----------------------------
+      // Embedded quiz data
+      // ----------------------------
+      const QUIZ = [
+        {
+          coverImage:
+            "Stormy oil rigs at sea under red political clouds, tense diplomats silhouetted, dramatic lighting, high contrast, cinematic energy",
+          coverColor: "#E53935",
+          intro:
+            "After a tense meeting, Washington sent shockwaves through energy markets as a president hinted at punishing one oil giant.",
+          real: "Donald Trump signaled he may block ExxonMobil from Venezuela oil investments.",
+          fake: [
+            "Donald Trump announced a full US ban on all foreign oil companies in Venezuela.",
+            "Donald Trump approved ExxonMobil’s immediate return to Venezuelan oil fields.",
+          ],
+          refLink:
+            "https://www.theguardian.com/us-news/2026/jan/12/donald-trump-threatens-block-exxonmobil-venezuela",
+        },
+        {
+          coverImage:
+            "Futuristic shopping chat interface blending into aisles and smartphones, glowing AI lines, vibrant retail colors, high contrast",
+          coverColor: "#7B1FA2",
+          intro:
+            "Shopping carts vanished overnight as an AI partnership promised to let people buy everything inside a chat window.",
+          real: "Walmart partnered with Google Gemini to enable AI-powered shopping and instant checkout.",
+          fake: [
+            "Walmart replaced its website entirely with a Google Gemini chat interface.",
+            "Walmart announced Google Gemini will manage all in-store pricing decisions.",
+          ],
+          refLink:
+            "https://www.cnbc.com/2026/01/11/walmart-partners-with-google-gemini-on-shopping-tool.html",
+        },
+        {
+          coverImage:
+            "Frozen airport runway under polar twilight, grounded planes, icy mist, travelers as silhouettes, dramatic cold atmosphere",
+          coverColor: "#00B0FF",
+          intro:
+            "The cold became the villain as travel plans collapsed across the Arctic with temperatures that stopped machines cold.",
+          real: "Severe cold in northern Finland stranded thousands after flights were canceled.",
+          fake: [
+            "Northern Finland permanently closed airports due to record-breaking cold.",
+            "The Finnish government ordered a nationwide travel shutdown for winter storms.",
+          ],
+          refLink:
+            "https://apnews.com/article/finland-flights-canceled-europe-cold-weather-c95ec0c51effea12b378e1af7408b754",
+        },
+        {
+          coverImage:
+            "Snow-covered alpine mountains with rushing white avalanches, tiny skiers below, dramatic scale, high contrast",
+          coverColor: "#1DE9B6",
+          intro:
+            "A perfect ski weekend turned deadly when the mountain itself gave way without warning.",
+          real: "Six skiers died in avalanches near Val d’Isère in the French Alps.",
+          fake: [
+            "Dozens of skiers were rescued unharmed after a controlled avalanche in Val d’Isère.",
+            "French authorities closed all Alpine resorts after a single avalanche injury.",
+          ],
+          refLink:
+            "https://www.thetimes.com/world/europe/article/avalanche-deaths-france-val-disere-lg5twlw7m",
+        },
+        {
+          coverImage:
+            "Abstract medical interface with AI brain overlaying DNA strands and lab reports, glowing health data, futuristic realism",
+          coverColor: "#43A047",
+          intro:
+            "Doctors may soon have an AI reading patient histories alongside them as a powerful model moves into medicine.",
+          real: "Anthropic expanded Claude to healthcare with access to lab results and health records.",
+          fake: [
+            "Anthropic announced Claude will replace doctors in clinical decision-making.",
+            "Anthropic limited Claude’s healthcare use to medical students only.",
+          ],
+          refLink:
+            "https://www.nbcnews.com/tech/tech-news/anthropic-health-care-rcna252872",
+        },
+        {
+          coverImage:
+            "Commercial airplanes merging into a single corporate logo over a glowing world map, financial charts rising",
+          coverColor: "#FF9800",
+          intro:
+            "A surprise airline marriage promised cheaper vacations and sent investors scrambling to do the math.",
+          real: "Allegiant agreed to acquire Sun Country Airlines in a deal valued at about $1.5 billion.",
+          fake: [
+            "Sun Country agreed to buy Allegiant in a stock-only merger.",
+            "The airline merger was blocked immediately by US antitrust regulators.",
+          ],
+          refLink:
+            "https://nypost.com/2026/01/11/business/allegiant-to-acquire-sun-country-airlines-for-1-5b/",
+        },
+        {
+          coverImage:
+            "Chaotic city protest scene with a moving truck amid crowds, flashing lights, motion blur, intense street energy",
+          coverColor: "#D81B60",
+          intro:
+            "What began as a loud political protest exploded into viral chaos when a truck suddenly charged the crowd.",
+          real: "A U-Haul truck drove into an Iran protest in Los Angeles, injuring two people.",
+          fake: [
+            "The U-Haul truck incident at the protest caused multiple fatalities.",
+            "Los Angeles police confirmed the truck driver was never detained.",
+          ],
+          refLink:
+            "https://www.tmz.com/2026/01/11/u-haul-truck-plows-into-iranian-protesters-on-video/",
+        },
+        {
+          coverImage:
+            "Red carpet glamour with soft golden lights, elegant gown silhouette highlighting pregnancy, paparazzi flashes",
+          coverColor: "#F06292",
+          intro:
+            "Cameras flashed as a Hollywood star silently revealed life-changing news without saying a word.",
+          real: "Hailee Steinfeld revealed her pregnancy by debuting her baby bump at the Golden Globes.",
+          fake: [
+            "Hailee Steinfeld announced her pregnancy during an on-stage acceptance speech.",
+            "Hailee Steinfeld confirmed she is expecting twins at the Golden Globes.",
+          ],
+          refLink:
+            "https://www.buzzfeed.com/noradominick/hailee-steinfeld-baby-bump-reveal-golden-globes-2026",
+        },
+      ];
+
+      // ---------- Helpers ----------
+      function shuffle(arr) {
+        const a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+      }
+
+      function escapeHtml(str) {
+        return str
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function getDomain(url) {
+        try {
+          const u = new URL(url);
+          return u.hostname.replace(/^www\./, "");
+        } catch {
+          return "link";
+        }
+      }
+
+      // ---------- Elements ----------
+      const quizEl = document.getElementById("quiz");
+      const resultsEl = document.getElementById("results");
+
+      const restartBtn = document.getElementById("restartBtn");
+      const progressText = document.getElementById("progressText");
+      const introText = document.getElementById("introText");
+      const optionsEl = document.getElementById("options");
+      const feedbackEl = document.getElementById("feedback");
+      const scoreText = document.getElementById("scoreText");
+      const nextBtn = document.getElementById("nextBtn");
+
+      const percentText = document.getElementById("percentText");
+      const rawScoreText = document.getElementById("rawScoreText");
+      const playAgainBtn = document.getElementById("playAgainBtn");
+
+      const coverBox = document.getElementById("coverBox");
+      const coverPrompt = document.getElementById("coverPrompt");
+
+      // ---------- State ----------
+      let questions = [];
+      let idx = 0;
+      let correct = 0;
+      let answered = false;
+
+      function resetRun() {
+        idx = 0;
+        correct = 0;
+        answered = false;
+
+        // Shuffle questions, and ALWAYS shuffle options (real + fake) per question
+        questions = shuffle(QUIZ).map((q) => {
+          const options = shuffle([
+            { text: q.real, isReal: true },
+            ...q.fake.map((t) => ({ text: t, isReal: false })),
+          ]);
+          return {
+            intro: q.intro,
+            refLink: q.refLink,
+            coverImage: q.coverImage,
+            coverColor: q.coverColor,
+            options,
+          };
+        });
+      }
+
+      function showQuiz() {
+        quizEl.classList.remove("hidden");
+        resultsEl.classList.add("hidden");
+      }
+
+      function showResults() {
+        quizEl.classList.add("hidden");
+        resultsEl.classList.remove("hidden");
+      }
+
+      function disableOptions() {
+        [...optionsEl.querySelectorAll("button")].forEach(
+          (b) => (b.disabled = true)
+        );
+      }
+
+      function renderCover(q) {
+        const base = q.coverColor || "#111111";
+        coverBox.style.background = `linear-gradient(135deg, ${base}, rgba(0,0,0,0.9))`;
+        coverBox.style.boxShadow = `inset 0 0 0 1px rgba(255,255,255,0.04)`;
+        coverPrompt.textContent = q.coverImage || "cover prompt missing";
+      }
+
+      function renderQuestion() {
+        answered = false;
+
+        feedbackEl.classList.add("hidden");
+        feedbackEl.innerHTML = "";
+        feedbackEl.className =
+          "mt-4 hidden rounded-xl border px-4 py-3 text-sm";
+
+        nextBtn.classList.add("hidden");
+
+        const q = questions[idx];
+        progressText.textContent = `Question ${idx + 1} / ${questions.length}`;
+        scoreText.textContent = `${correct} correct`;
+
+        renderCover(q);
+        introText.textContent = q.intro;
+
+        optionsEl.innerHTML = "";
+        q.options.forEach((opt, i) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className =
+            "group rounded-xl border border-neutral-800 bg-neutral-950/30 px-4 py-3 text-left text-sm text-neutral-100 hover:bg-neutral-800/30 focus:outline-none focus:ring-2 focus:ring-neutral-500/40 disabled:opacity-60";
+          btn.innerHTML = `
+            <div class="flex items-start gap-3">
+              <div class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-neutral-700 text-xs text-neutral-300 group-hover:border-neutral-500">
+                ${i + 1}
+              </div>
+              <div class="leading-relaxed">${escapeHtml(opt.text)}</div>
+            </div>
+          `;
+          btn.addEventListener("click", () => handleAnswer(opt, btn));
+          optionsEl.appendChild(btn);
+        });
+      }
+
+      function handleAnswer(opt, clickedBtn) {
+        if (answered) return;
+        answered = true;
+
+        disableOptions();
+
+        const q = questions[idx];
+        const wasCorrect = opt.isReal === true;
+        if (wasCorrect) correct++;
+
+        if (wasCorrect) {
+          clickedBtn.classList.add(
+            "border-emerald-500/40",
+            "bg-emerald-500/10"
+          );
+        } else {
+          clickedBtn.classList.add("border-red-500/40", "bg-red-500/10");
+        }
+
+        // Highlight the real option subtly
+        const realText = q.options.find((o) => o.isReal)?.text;
+        if (realText) {
+          [...optionsEl.querySelectorAll("button")].forEach((b) => {
+            if (b.textContent.includes(realText)) {
+              b.classList.add("border-emerald-500/30", "bg-emerald-500/5");
+            }
+          });
+        }
+
+        const domain = getDomain(q.refLink);
+
+        feedbackEl.classList.remove("hidden");
+        if (wasCorrect) {
+          feedbackEl.classList.add(
+            "border-emerald-500/40",
+            "bg-emerald-500/10",
+            "text-emerald-100"
+          );
+          feedbackEl.innerHTML = `
+            <div class="font-medium">Correct — TRUE.</div>
+            <div class="mt-1 text-emerald-100/90 text-sm">
+              <a class="underline decoration-emerald-300/60 underline-offset-4 hover:opacity-90" href="${
+                q.refLink
+              }" target="_blank" rel="noreferrer noopener">
+                Open the real story (${escapeHtml(domain)})
+              </a>
+            </div>
+          `;
+        } else {
+          feedbackEl.classList.add(
+            "border-red-500/40",
+            "bg-red-500/10",
+            "text-red-100"
+          );
+          feedbackEl.innerHTML = `
+            <div class="font-medium">Wrong — FAKE.</div>
+            <div class="mt-1 text-red-100/90 text-sm">
+              <a class="underline decoration-red-300/60 underline-offset-4 hover:opacity-90" href="${
+                q.refLink
+              }" target="_blank" rel="noreferrer noopener">
+                Open the real story (${escapeHtml(domain)})
+              </a>
+            </div>
+          `;
+        }
+
+        scoreText.textContent = `${correct} correct`;
+        nextBtn.textContent = idx === questions.length - 1 ? "Finish" : "Next";
+        nextBtn.classList.remove("hidden");
+      }
+
+      function finishQuiz() {
+        const total = questions.length;
+        const pct = total ? Math.round((correct / total) * 100) : 0;
+        percentText.textContent = `${pct}%`;
+        rawScoreText.textContent = `You got ${correct} out of ${total} correct.`;
+        showResults();
+      }
+
+      // ---------- Events ----------
+      restartBtn.addEventListener("click", () => {
+        resetRun();
+        showQuiz();
+        renderQuestion();
+      });
+
+      nextBtn.addEventListener("click", () => {
+        if (idx >= questions.length - 1) return finishQuiz();
+        idx++;
+        renderQuestion();
+      });
+
+      playAgainBtn.addEventListener("click", () => {
+        resetRun();
+        showQuiz();
+        renderQuestion();
+      });
+
+      // ---------- Init ----------
+      resetRun();
+      showQuiz();
+      renderQuestion();
+    </script>
+  </body>
+</html>
