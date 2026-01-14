@@ -1,18 +1,152 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>Centered Text</title>
-<style>
-  html, body {
-    height: 100%;
-    margin: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>8legs Design - HTML</title>
+  <style>
+    :root {
+      --bg-main: #0F1113;
+      --bg-card: #1A1D1F;
+      --bg-sidebar: #1A1D1F;
+      --text-primary: #FFFFFF;
+      --text-secondary: #9CA3AF;
+      --accent: #E35F32;
+      --accent-hover: #F06A3D;
+      --border: #33373A;
+      --button-bg: #2A2D31;
+      --button-hover: #33373A;
+      --radius-lg: 12px;
+      --radius-md: 8px;
+      --shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+
+    * { box-sizing: border-box; }
+    
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg-main);
+      color: var(--text-primary);
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      width: 260px;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .sidebar .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 40px;
+    }
+
+    .sidebar .logo span {
+      color: var(--accent);
+    }
+
+    .nav-section {
+      margin-bottom: 32px;
+    }
+
+    .nav-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+
+    .nav-item {
+      width: 100%;
+      text-align: left;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.2s;
+      margin-bottom: 4px;
+      text-decoration: none;
+    }
+
+    .nav-item:hover, .nav-item.active {
+      background: var(--button-bg);
+      color: var(--text-primary);
+    }
+
+    .main-content {
+      flex-grow: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 40px;
+    }
+
+    .centered-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 60px 100px;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+
+    .centered-card h1 {
+      font-size: 64px;
+      margin: 0;
+      letter-spacing: 4px;
+      color: var(--text-primary);
+    }
+
+    .centered-card p {
+      color: var(--text-secondary);
+      margin-top: 10px;
+      font-size: 18px;
+    }
+
+    @media (max-width: 768px) {
+      body { flex-direction: column; }
+      .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); }
+    }
+  </style>
 </head>
 <body>
-  HTML
+  <aside class="sidebar">
+    <div class="logo">
+      <span>8</span>legs
+    </div>
+    
+    <div class="nav-section">
+      <div class="nav-label">Navigation</div>
+      <a href="#" class="nav-item active">Home</a>
+      <a href="#" class="nav-item">Explore</a>
+      <a href="#" class="nav-item">Settings</a>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="centered-card">
+      <h1>HTML</h1>
+      <p>Design Language Applied</p>
+    </div>
+  </main>
 </body>
 </html>
